@@ -1,0 +1,72 @@
+version: '3'
+
+# First time run, you must:
+#   docker-compose run --rm openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM
+#   docker-compose run --rm openvpn ovpn_initpki
+
+## Generate client cert:
+# export CLIENTNAME="your_client_name"
+## with a passphrase (recommended)
+# docker-compose run --rm openvpn easyrsa build-client-full $CLIENTNAME
+## without a passphrase (not recommended)
+# docker-compose run --rm openvpn easyrsa build-client-full $CLIENTNAME nopass
+
+## Retrieve the client configuration with embedded certificates
+# docker-compose run --rm openvpn ovpn_getclient $CLIENTNAME > $CLIENTNAME.ovpn
+
+services:
+  # proxy will need self signed ssl
+  # use a key for auth/access
+  proxy:
+    container_name: traefik
+    image: traefik:1.3.4
+    restart: always
+    command: ["traefik", "--web", "--docker", "--docker.domain=docker.localhost", "--logLevel=DEBUG" ,"--configFile=/conf/traefik.toml"]
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - webgateway
+    ports:
+      - "80:80"
+      - "443:443"
+#      - "8443:8443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.toml:/conf/traefik.toml
+      - traefik-certs:/etc/ssl/certs/deployed
+
+  wetty:
+    container_name: wetty
+    image: cultclassik/wetty
+    build: ./wetty
+    restart: always
+    #entrypoint: ["node", "/app/app.js", "-p", "3000", "--sshhost", "home.diehlabs.com", "--sshport", "8022"]
+    #entrypoint: node /app/app.js -p 3000 --sshhost home.diehlabs.com --sshport 8022
+    labels:
+      - "traefik.frontend.rule=Host:jump.diehlabs.com; PathPrefix:/wetty"
+      - "traefik.passHostHeader=true"
+    networks:
+      - webgateway
+    expose:
+      - "3000"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  webgateway:
+    driver: bridge
+
+volumes:
+  traefik-conf:
+  traefik-certs:
+
+#  vpn-server:
+#    cap_add:
+#      - NET_ADMIN
+#    image: kylemanna/docker-openvpn
+#    restart: always
+#    ports:
+#      - 1194:1194/udp
+#    volumes:
+#      - ./openvpn-data/conf:/etc/openvpn
