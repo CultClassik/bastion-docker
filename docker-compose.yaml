@@ -1,4 +1,5 @@
-version: '3'
+version: '2'
+# first build the wetty image, use the password you want in the DOckerfile
 
 # First time run, you must:
 #   docker-compose run --rm openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM
@@ -19,7 +20,7 @@ services:
   # use a key for auth/access
   proxy:
     container_name: traefik
-    image: traefik:1.3.4
+    image: traefik:1.7.6
     restart: always
     command: ["traefik", "--web", "--docker", "--docker.domain=docker.localhost", "--logLevel=DEBUG" ,"--configFile=/conf/traefik.toml"]
     labels:
@@ -29,7 +30,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-#      - "8443:8443"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -39,10 +39,10 @@ services:
   wetty:
     container_name: wetty
     image: cultclassik/wetty
-    build: ./wetty
     restart: always
-    #entrypoint: ["node", "/app/app.js", "-p", "3000", "--sshhost", "home.diehlabs.com", "--sshport", "8022"]
-    #entrypoint: node /app/app.js -p 3000 --sshhost home.diehlabs.com --sshport 8022
+    environment:
+      SSHPORT: 8022
+      SSHHOST: home.diehlabs.com
     labels:
       - "traefik.frontend.rule=Host:jump.diehlabs.com; PathPrefix:/wetty"
       - "traefik.passHostHeader=true"

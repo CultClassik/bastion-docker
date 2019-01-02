@@ -6,18 +6,10 @@ address = ":8080"
 [entryPoints]
   [entryPoints.http]
   address = ":80"
-#  [entryPoints.http.auth.basic]
-  #users = ["jumper:$apr1$38UTfXIo$THdD0oQ88eNOp3wa4hj3K."]
 
   [entryPoints.https]
   address = ":443"
     [entryPoints.https.tls]
-
-#  [entryPoints.wetty]
-#  address = ":8443"
-#  [entryPoints.wetty.auth.basic]
-#  users = ["jumper:$apr1$38UTfXIo$THdD0oQ88eNOp3wa4hj3K."]
-#    [entryPoints.wetty.tls]
 
 [acme]
 email = "cultclassik@gmail.com"
@@ -27,22 +19,7 @@ entryPoint = "https"
 onDemand = false
 OnHostRule = false
 
+[acme.tlsChallenge]
+
 [[acme.domains]]
 main = "jump.diehlabs.com"
-
-[backends]
-  [backends.blueiris]
-    [backends.blueiris.LoadBalancer]
-    method = "wrr"
-    [backends.blueiris.servers.server1]
-    url = "http://bi.diehlabs.com:443"
-    weight = 0
-
-[frontends]
-  [frontends.blueiris]
-  backend = "blueiris"
-  passHostHeader = true
-  priority = 1
-    [frontends.blueiris.routes.default]
-     rule = "Host:jump.diehlabs.com; ReplacePath:/cams"
-     passHostHeader=true
